@@ -1,0 +1,161 @@
+html {
+    font-size: 100%;
+    font-family: "Century Gothic", "Arial";
+}
+
+body {
+    background-color: #0C242B;
+    font-size: 2rem;
+    min-width: 1200px;
+    min-height: 900px;
+}
+
+.page-title {
+    color: #fdf6e3;
+    font-size: 2.0rem;
+    text-align: center;
+    font-family: "Century Gothic", "Arial";
+}
+
+.page-description {
+    text-align: center;
+    position: center;
+    color: #54C4BB;
+    font-size: 1.2rem;
+    font-family: "Century Gothic", "Arial";
+}
+
+.container {
+    text-align: center;
+}
+
+#mainCanvas {
+    text-align: center;
+    background: #7EB1DD;
+    border-radius: 10px;
+    border: 4px solid #000000;
+}
+
+#canvas-xy-view-controller {
+    text-align: center;
+    width:150px;
+    height:150px;
+    border-radius: 50px;
+    background: rgb(168, 203, 231);
+    border: 4px solid #000000;
+}
+
+.element-description-text {
+    color: #fdf6e3;
+    font-size: 1.3rem;
+    font-family: "Century Gothic", "Arial";
+}
+
+.controls {
+    padding-left: 150px;
+    padding-right: 150px;
+    margin: 0px auto;
+    width: 100%;
+}
+
+.controls td{
+    text-align:center;
+    }
+
+#slider_zoom{
+    direction: rtl
+}
+
+#speed-slider{
+    direction: rtl
+}
+
+.footer-text {
+    text-align: center;
+    color: #54C4BB;
+    font-size: 1.0rem;
+    font-family: "Century Gothic", "Arial";
+    padding-top: 50px;
+    padding-bottom: 2px;
+}
+
+label {
+    color: #fdf6e3;
+    font-size: 1.2rem;
+    font-family: "Century Gothic", "Arial";
+}
+
+.custom-select {
+    width:100px;
+    height:40px;
+}
+
+.custom-button {
+    background-color: #008A8F; /* Green */
+    border: none;
+    color: white;
+    padding: 12px 22px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 20px;
+    border-radius: 8px;
+    transition-duration: 0.4s;
+    text-decoration: none;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.custom-button:hover {
+    background-color: rgb(59, 193, 197); /* Green */
+    color: white;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    outline: none !important;
+    -webkit-appearance: none;
+    width: 200px;
+    border-radius: 8px;
+    height: 7px;
+    border: 1px solid #bdc3c7;
+    background-color: #0C242B;
+}
+
+.custom-checkbox{
+    visibility: hidden;
+    
+}
+
+  .checkbox .custom-checkbox {
+    display: none;
+
+  }
+
+  .custom-checkbox + label:before {
+    background-color: #887f7a;
+    border: 1px solid #cacece;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), inset 0px -15px 10px -12px rgba(0, 0, 0, 0.05);
+    display: inline-block;
+    transition-duration: 0.3s;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    content: '';
+    margin-right: 10px;
+    margin-left: -25px;
+
+  }
+  .custom-checkbox:checked + label:before {
+    background-color: #54C4BB;
+  }
+
+
+input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    background-color: #008A8F;
+    border: 1px solid #CECECE;
+    border-radius: 10%;
+    height: 20px;
+    width: 20px;
+}
