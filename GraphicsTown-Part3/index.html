@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>CS559 P9</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <p class="page-title">CS559 P9 - GraphicsTown (Part III)</p>
+    <p class="page-description"> Paris - The Louvre and Sculptures against the Night Sky </p>
+    <p class="page-description"> Implement custom objects, textures bump mapping and advanced shaders </p>
+    <p class="page-description"> NOTE: Please shrink window size if you have trouble moving/draging the canvas </p>
+    <div class="container" id="canvas_container">
+        <canvas id="mainCanvas" width="500" height="500" style="border:1px solid #000;"></canvas>
+        <br/>
+    </div>
+
+    <table class="controls">
+        <tr>
+            <td>
+                <p class="element-description-text">Time of Day</p>
+                <input class="slider" id="time-of-day-slider" type="range" min="0" max="24" value="5.0" step="0.25" />
+            </td>
+            <td>
+                <p class="element-description-text" id="camera-view-cords-text"></p>
+                <canvas id="canvas-xy-view-controller">
+                    </div>
+            </td>
+            <td>
+                <p class="element-description-text">Object Speed</p>
+                <input class="slider" id="speed-slider" type="range" min="100" max="500" value="400" step="5" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input type="checkbox" class="custom-checkbox" id="run-checkbox" checked="true" />
+                <label for=run-checkbox> Run </label>
+            </td>
+            <td>
+                <p class="element-description-text"></p>
+            </td>
+            <td>
+                <input type="checkbox" class="custom-checkbox" id="examine-checkbox" />
+                <label for=examine-checkbox> Examine </label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p class="element-description-text">View Selector</p>
+                <select class="custom-select" id="view-selector">
+                    <option value="Drag-to-Move">Drag to Move</option>
+                    <option value="Fly">Fly</option>
+                    <option value="Drive">Drive</option>
+                </select>
+            </td>
+            <td>
+                <input type="button" class="custom-button" value="Reset View" id="reset-view-button" />
+            </td>
+            <td>
+                <p class="element-description-text">Object Selector</p>
+                <select class="custom-select" id="object-selector">
+                </select>
+            </td>
+        </tr>
+    </table>
+
+    <p class="footer-text">Benjamin Lenington - 2017</p>
+
+    <!-- Load essential scripts first -->
+    <script src="Libraries/twgl-full.min.js"></script>
+    <script src="Libraries/OBJLoader.js"></script>
+    <script src="Libraries/arcball.js"></script>
+
+    <!-- Load objects -->
+    <script src="Objects/skybox.js"></script>
+    <script src="Objects/obj_src/cylinder_obj_src.js"></script>
+    <script src="Objects/cylinder.js"></script>
+    
+    <script src="Objects/diamond.js"></script>
+    <script src="Objects/sphere.js"></script>
+    <script src="Objects/grassGround.js"></script>
+    <script src="Objects/water.js"></script>
+    <script src="Objects/louvre.js"></script>
+    <script src="Objects/building.js"></script>
+
+    <!-- Load the scene -->
+    <script src="sceneLoader.js"></script>
+    <script src="graphicstown.js"></script>
+
+</body>
+
+<script id="basic-vs" type="notjs">
+    // Position and matrix values
+    attribute vec3 vpos;
+    varying vec3 fPos;
+    attribute vec3 vnormal;
+    varying vec3 fNormal;
+    uniform mat3 normalMatrix;
+    
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 proj;
+    precision highp float;
+    varying vec2 fTexCoord;
+    
+    // Light directions
+    uniform vec3 lightdir;
+    varying vec3 outLightDir;
+    
+    // Color vec3 values
+    uniform vec3 cubecolor;
+    varying vec3 outColor;
+    
+    // Calculate and return the updated diffuse value depending
+    // on the direction of the light source
+    float calculateDiffuse(vec4 normal, vec3 lightdir){
+        float dir = dot(normal, vec4(lightdir,0.0)); 
+        float diffuseValue = 0.7 + (dir* 0.4);
+        outLightDir = lightdir;
+        return diffuseValue;
+    }
+    
+    void main(void) {
+        vec4 normal = normalize(model * vec4(vnormal,0.0));
+        fPos = (view* model* vec4(vpos.xyz,1.0)).xyz;       
+        outColor = cubecolor * calculateDiffuse(normal,lightdir);
+        fNormal = normalize(normalMatrix * vnormal);
+        gl_Position = proj * view * model * vec4(vpos, 1.0);
+    }
+    
+    </script>
+
+<script id="basic-fs" type="notjs">
+    precision highp float;
+    
+    // vec3 color values
+    varying vec3 outColor;
+    varying vec3 outLightDir;
+    
+    // vec3 position values
+    varying vec3 fPos;
+    varying vec3 fNormal;
+    
+    varying vec2 fTexCoord;
+    uniform sampler2D texSampler;
+    
+    vec3 calculatespecular_coefolor(float specular_coeff, float specular_exp, vec3 light_color){
+        vec3 normVal = normalize (normalize(outLightDir) + normalize(-fPos));
+        float maxValue = max(0.0,dot(normalize(fNormal), normVal));
+        float tmpColor = pow(maxValue ,specular_exp);
+        vec3 specColorValue = tmpColor * light_color;
+        return (specColorValue * specular_coeff);
+    }
+    
+    void main(void) {
+        vec4 texColor = texture2D(texSampler, fTexCoord);
+        vec3 specular_color = calculatespecular_coefolor(1.0, 12.0, vec3(1.0, 1.0, 1.0));
+        gl_FragColor = vec4(outColor + specular_color, 1.0);
+    }
+    </script>
+
+<script id="reflective-vs" type="notjs">
+        precision highp float;
+        attribute vec3 vpos;
+        uniform mat4 view;
+        uniform mat4 proj;
+        uniform mat4 model;
+        attribute vec3 vnormal;
+        varying vec3 fNormal;
+        varying vec3 outNormal;
+        varying vec2 fTexCoord;
+        attribute vec2 vTex;
+        uniform mat3 normalMatrix;
+        uniform vec3 lightdir;
+        varying vec3 outLightDir;
+        varying vec3 fPos;
+
+        void main(void) {
+            outLightDir = lightdir;
+            fTexCoord = vTex;
+            gl_Position = proj * view * model * vec4(vpos, 1.0);
+            fNormal = normalize(normalMatrix * vnormal);
+            outNormal = normalize(view * model * vec4(vnormal,0.0)).xyz;
+            fPos = (view * model * vec4(vpos.xyz,1.0)).xyz;
+        }
+
+    </script>
+
+<script id="reflective-fs" type="notjs">
+        precision highp float;
+        varying vec3 outColor;
+        varying vec3 outLightDir;
+        varying vec3 fPos;
+        varying vec3 outNormal;
+        varying vec2 fTexCoord;
+        uniform vec3 cubecolor;
+        uniform sampler2D texSampler3;
+
+        void main(void) {
+            vec3 norm = normalize (normalize(-fPos) + normalize(outLightDir));
+            vec4 texColor = texture2D(texSampler3, fTexCoord);
+            float diffuse = 1.0 + 3.3*abs(dot(outNormal, outLightDir));
+            float specular = pow(max(dot(normalize(outNormal),norm), 0.01), 20.0); 
+            vec3 outColor = cubecolor * diffuse* specular;
+            gl_FragColor = vec4(texColor) + vec4(outColor, 1.0);
+        }
+    </script>
+
+<script id="glass-vs" type="notjs">
+        precision highp float;
+        attribute vec3 vpos;
+        attribute vec3 vnormal;
+        varying vec3 fNormal;
+        varying vec3 outNormal;
+        varying vec2 fTexCoord;
+        attribute vec2 vTex;
+        uniform mat3 normalMatrix;
+        uniform mat4 view;
+        uniform mat4 proj;
+        uniform mat4 model;
+        uniform vec3 lightdir;
+        varying vec3 outLightDir;
+        varying vec3 fPos;
+
+        void main(void) {
+            gl_Position = proj * view * model * vec4(vpos, 1.0);
+            fNormal = normalize(normalMatrix * vnormal);
+            outNormal = normalize(view * model * vec4(vnormal,0.0)).xyz;
+          
+            fPos =(view * model* vec4(vpos.xyz, 1.0)).xyz;
+            outLightDir = lightdir;
+            fTexCoord = vTex;
+        }
+    </script>
+
+<script id="glass-fs" type="notjs">
+        precision highp float;
+        varying vec3 outColor;
+        varying vec3 outLightDir;
+        varying vec3 fPos;
+        varying vec3 outNormal;
+
+        varying vec2 fTexCoord;
+        uniform vec3 cubecolor;
+        uniform sampler2D texSampler3;
+
+        void main(void) {
+            vec3 h = normalize (normalize(-fPos) + normalize(outLightDir));
+            vec4 texColor = texture2D(texSampler3, fTexCoord);
+            float diffuse = 1.0 + 3.5*abs(dot(outNormal, outLightDir));
+            float specular = pow(max(dot(normalize(outNormal) ,h),0.0),20.0); 
+            vec3 outColor = cubecolor * diffuse* specular;
+            gl_FragColor = vec4(texColor) + 0.00 + vec4(outColor, 1.0);
+        }
+    </script>
+
+<script id="bumpmap-vs" type="not-js">
+        attribute vec3 vpos;
+        attribute vec3 vnormal;
+        attribute vec3 vColor;
+        attribute vec2 vTex;
+        varying vec3 fPosition;
+        varying vec3 fColor;
+        varying vec3 fNormal;
+        varying vec2 fTex;
+        uniform mat4 proj;
+        uniform mat4 view;
+        uniform mat4 model;
+  
+        void main(void) {
+          fTex = vTex;
+          fColor = vColor;
+          fNormal = vnormal;                            
+          fPosition = (view * model * vec4(vpos, 1.0)).xyz;
+          gl_Position = proj * view * model  * vec4(vpos, 1.0);
+        }
+      </script>
+
+<script id="bumpmap-fs" type="not-js">
+        precision highp float;
+        varying vec3 fPosition;
+        varying vec3 fColor;
+        varying vec3 fNormal;
+        uniform mat4 uMVn;
+        varying vec2 fTex;
+        uniform sampler2D texSampler3;
+
+        // Constant values
+        const vec3  lightCol  = vec3(1.0, 1.0, 1.0);
+        const float diffuse_coef  = 0.6;
+        const float specular_coef = 1.0;
+        const vec3  light_color    = vec3(0.0,0.0,1.0);
+        const float light_strength    = 1.0;             
+        const float ambient_coef  = 0.15;
+        const float specular_exponent = 8.0;
+        
+        
+        vec2 calculateLighting(vec3 light_direction, vec3 n, float light_val, float Ka,
+          float Kd, float Ks, float shine) {
+          vec3 normLightDir = normalize(light_direction);
+          vec3 norm = normalize(normalize(-fPosition) + normLightDir);
+          float diffuse = Ka + Kd * light_val * max(0.0, dot(n, normLightDir));
+          float specular =  Ks * pow(max(0.0, dot(n,norm)), shine);
+          return vec2(diffuse, specular);
+        }
+  
+        void main(void) {
+          vec3 tmp = (uMVn * vec4(normalize(fNormal + texture2D(texSampler3,fTex).xyz), 0.0)).xyz;
+          vec3 ambient_diffuse_lighting = calculateLighting(light_color, tmp, light_strength, ambient_coef, diffuse_coef, 0.0,1.0).x * fColor;
+          vec3 color_strength  = calculateLighting(light_color,tmp,0.0 ,0.0, 0.0, specular_coef,specular_exponent).y*lightCol;
+          gl_FragColor = vec4(ambient_diffuse_lighting + color_strength, 1.0);
+        }
+  </script>
+
+<script id="nightsky-vs" type="not-js">
+    uniform mat4 view;
+    uniform mat4 proj;
+    uniform mat4 model;
+
+    attribute vec3 vpos;
+    attribute vec2 vTex;
+    varying vec2 fTex;
+
+    void main(void) {
+        fTex = vTex;
+        gl_Position = proj * view * model * vec4(vpos, 1.0);
+    }
+</script>
+
+<script id="nightsky-fs" type="not-js">
+      precision highp float;
+      varying vec2 fTex;
+      uniform sampler2D texSamplerSky;
+      
+      void main(void) {
+
+         gl_FragColor = vec4(texture2D(texSamplerSky, fTex));
+      }
+</script>
+
+</html>
